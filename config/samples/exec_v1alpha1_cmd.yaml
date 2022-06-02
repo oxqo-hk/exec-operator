@@ -1,6 +1,13 @@
 apiVersion: exec.github.com/v1alpha1
 kind: Cmd
 metadata:
-  name: cmd-sample
+  name: cmd-sample2
 spec:
-  # TODO(user): Add fields here
+  command: echo hi
+  selector:
+    app: kafka
+  keys:
+  - kafka-broker0-78cf89d7d6-lf6sg
+  ips:
+  - 10.1.243.252
+  - 1.2.3.4

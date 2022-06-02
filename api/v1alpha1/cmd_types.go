@@ -27,10 +27,10 @@ import (
 type CmdSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Command  string               `json:"command"`
-	Selector metav1.LabelSelector `json:"selector,omitempty"`
-	IPs      []string             `json:"ips,omitempty"`
-	Keys     []string             `json:"keys,omitempty"`
+	Command  string            `json:"command"`
+	Selector map[string]string `json:"selector,omitempty"`
+	IPs      []string          `json:"ips,omitempty"`
+	Names    []string          `json:"keys,omitempty"`
 }
 
 // CmdStatus defines the observed state of Cmd
@@ -38,12 +38,14 @@ type CmdStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Results map[string]CmdResult `json:"results,omitempty"`
+	Done    bool                 `json:"done,omitempty"`
 }
 
 type CmdResult struct {
-	ExitCode int    `json:"exit-code,omitempty"`
-	Stdout   string `json:"stdout,omitempty"`
-	Stderr   string `json:"stderr,omitempty"`
+	Timestamp metav1.Timestamp `json:"timestamp,omitempty"`
+	ExitCode  int              `json:"exit-code,omitempty"`
+	Stdout    string           `json:"stdout,omitempty"`
+	Stderr    string           `json:"stderr,omitempty"`
 }
 
 //+kubebuilder:object:root=true
