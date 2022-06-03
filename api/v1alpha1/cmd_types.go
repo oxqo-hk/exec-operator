@@ -42,10 +42,9 @@ type CmdStatus struct {
 }
 
 type CmdResult struct {
-	Timestamp metav1.Timestamp `json:"timestamp,omitempty"`
-	ExitCode  int              `json:"exit-code,omitempty"`
-	Stdout    string           `json:"stdout,omitempty"`
-	Stderr    string           `json:"stderr,omitempty"`
+	Timestamp string `json:"timestamp,omitempty"`
+	Stdout    string `json:"stdout,omitempty"`
+	Stderr    string `json:"stderr,omitempty"`
 }
 
 //+kubebuilder:object:root=true

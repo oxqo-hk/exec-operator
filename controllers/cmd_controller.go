@@ -22,8 +22,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -62,13 +64,17 @@ type CmdReconciler struct {
 func (r *CmdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 	log.SetLogger(zap.New())
-	logger := log.Log.WithName("cmd_controller")
+	logger := log.Log.WithValues("cmd_controller", req.NamespacedName)
 
 	cmd := &execv1alpha1.Cmd{}
 	err := r.Get(ctx, req.NamespacedName, cmd)
 	if err != nil {
-		logger.Info("failed to get cmd, must be deletion.")
-		return ctrl.Result{}, nil
+		if errors.IsNotFound(err) {
+			logger.Info("failed to get cmd, must be deletion.")
+			return ctrl.Result{}, nil
+		}
+		logger.Error(err, "failed to get cmd.")
+		return ctrl.Result{}, err
 	}
 	//check if this cmd is already executed
 	if cmd.Status.Done == true {
@@ -88,13 +94,12 @@ func (r *CmdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			logger.Info("failed to get any pods with given selector")
 		}
 	}
-	//List by IPs
+	//Get Targets by IPs and Names
 	all_pods := &corev1.PodList{}
 	opts := &client.ListOptions{
 		Namespace: cmd.Namespace,
 	}
 	err = r.List(ctx, all_pods, opts)
-	//TODO: ditinguish empty and error
 	if err != nil {
 		logger.Error(err, fmt.Sprintf("failed to List pods"))
 		return ctrl.Result{}, err
@@ -105,21 +110,13 @@ func (r *CmdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				AppendPodIfNotDup(pods, pod)
 			}
 		}
-	}
-	//Get by Name
-	for _, name := range cmd.Spec.Names {
-		tmp_pod := &corev1.Pod{}
-		err = r.Get(ctx, client.ObjectKey{
-			Namespace: cmd.Namespace,
-			Name:      name,
-		}, tmp_pod)
-		//TODO: ditinguish empty and error
-		if err != nil {
-			logger.Error(err, fmt.Sprintf("failed to get pods with given name: %s, skipping this", name))
+		for _, name := range cmd.Spec.Names {
+			if pod.Name == name {
+				AppendPodIfNotDup(pods, pod)
+			}
 		}
-		//pods.Items = append(pods.Items, *tmp_pod)
-		AppendPodIfNotDup(pods, *tmp_pod)
 	}
+
 	results := map[string]v1alpha1.CmdResult{}
 	for _, pod := range pods.Items {
 		//do exec from here
@@ -131,8 +128,9 @@ func (r *CmdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		}
 		logger.Info(string(stdout.String()) + ":from pod - " + pod.Name)
 		results[pod.Namespace+"/"+pod.Name] = v1alpha1.CmdResult{
-			Stdout: stdout.String(),
-			Stderr: stderr.String(),
+			Stdout:    stdout.String(),
+			Stderr:    stderr.String(),
+			Timestamp: time.Now().String(),
 		}
 	}
 	cmd_copy := cmd.DeepCopy()
@@ -140,7 +138,7 @@ func (r *CmdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	cmd_copy.Status.Done = true
 	err = r.Status().Update(ctx, cmd_copy)
 	if err != nil {
-		logger.Error(err, "failed to update cmd status: ", cmd.Name)
+		logger.Error(err, "failed to update cmd status: "+cmd.Name)
 		return ctrl.Result{}, err
 	}
 
