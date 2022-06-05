@@ -6,6 +6,7 @@
 *.so
 *.dylib
 bin
+.vscode
 testbin/*
 
 # Test binary, build with `go test -c`

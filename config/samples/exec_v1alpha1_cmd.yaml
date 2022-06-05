@@ -1,13 +1,17 @@
 apiVersion: exec.github.com/v1alpha1
 kind: Cmd
 metadata:
-  name: cmd-sample2
+  name: cmd-sample
 spec:
-  command: echo hi
+  command: |
+    echo "this is example commnad"
+    ls -al
+    ifconfig
+    echo "result of final job: $?" 
   selector:
-    app: kafka
+    app: nginx
   keys:
-  - kafka-broker0-78cf89d7d6-lf6sg
+  - nginx-sample
   ips:
-  - 10.1.243.252
+  - 10.1.243.222
   - 1.2.3.4
