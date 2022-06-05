@@ -6,9 +6,11 @@ Execute "kubectl exec" commands on multiple pods selected by custom resource
 
 - Execute shell command on selected pod.container[0].
 - Pods are selected by IP, name and selector.
+- All selecting factors will only bounded on CR’s namespace to prevent unintended actions.
 - Same command will be executed on all pods selected by each factor
 - Command will not be executed more than once even if a same pod selected multiple times by multiple factors.
 - After attempt for execution, the command will marked as done, and not be executed again in reconciling loop, whether the command fails or not.
+- The results of command can be found in CR’s Status
 
 ## Getting Started
 
